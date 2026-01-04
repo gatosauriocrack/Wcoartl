@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <style>
+        body {
+            margin: 0;
+            background-color: #000;
+            color: #fff;
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        #barra-contenedor {
+            width: 80%;
+            height: 40px;
+            background: #1a1a1a;
+            border-radius: 20px;
+            border: 2px solid #333;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        #relleno {
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(90deg, #3498db, #2ecc71);
+            transition: width 0.1s ease-out;
+        }
+        #porcentaje {
+            font-size: 80px;
+            font-weight: bold;
+        }
+        #instrucciones {
+            color: #666;
+            margin-top: 20px;
+            text-align: center;
+        }
+        button {
+            padding: 15px 30px;
+            font-size: 18px;
+            cursor: pointer;
+            border-radius: 10px;
+            border: none;
+            background: #fff;
+        }
+    </style>
+</head>
+<body>
+
+    <button id="btn">ACTIVAR DETECTOR</button>
+
+    <div id="test-area" style="display:none; width: 100%; text-align: center;">
+        <div id="porcentaje">0%</div>
+        <div style="display: flex; justify-content: center;">
+            <div id="barra-contenedor">
+                <div id="relleno"></div>
+            </div>
+        </div>
+        <div id="instrucciones">Presiona los botones de volumen de tu teléfono</div>
+    </div>
+
+    <audio id="dummy-audio" loop>
+        <source src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAgD5AAAB+AAABAAgAZGF0YQAAAAA=" type="audio/wav">
+    </audio>
+
+    <script>
+        const btn = document.getElementById('btn');
+        const testArea = document.getElementById('test-area');
+        const relleno = document.getElementById('relleno');
+        const porcentajeTxt = document.getElementById('porcentaje');
+        const audio = document.getElementById('dummy-audio');
+
+        function actualizar() {
+            let vol = Math.round(audio.volume * 100);
+            porcentajeTxt.innerText = vol + "%";
+            relleno.style.width = vol + "%";
+            
+            document.body.style.backgroundColor = `rgb(0, ${vol/4}, ${vol/2})`;
+        }
+
+        btn.addEventListener('click', () => {
+            btn.style.display = 'none';
+            testArea.style.display = 'block';
+            
+            audio.play();
+            
+            window.setInterval(() => {
+                actualizar();
+            }, 100);
+        });
+
+        window.addEventListener('volumechange', actualizar);
+    </script>
+</body>
+</html>
