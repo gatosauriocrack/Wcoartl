@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prueba de Movimiento con Giroscopio</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Evita que la pantalla se mueva */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #1a1a1a;
+            font-family: sans-serif;
+            color: white;
+        }
+
+        /* Tu personaje redondo hecho con CSS */
+        #personaje {
+            width: 60px;
+            height: 60px;
+            background: radial-gradient(circle at 30% 30%, #ff5733, #900);
+            border-radius: 50%;
+            position: absolute;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            transition: transform 0.1s ease-out; /* Suaviza el movimiento */
+        }
+
+        #instrucciones {
+            text-align: center;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 18px;
+            background-color: #2ecc71;
+            border: none;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            pointer-events: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="instrucciones">
+        <h2>Mueve tu teléfono</h2>
+        <p id="datos">Esperando sensores...</p>
+        <button id="botonPermiso">Activar Sensores</button>
+    </div>
+
+    <div id="personaje"></div>
+
+    <script>
+        const personaje = document.getElementById('personaje');
+        const datosTexto = document.getElementById('datos');
+        const boton = document.getElementById('botonPermiso');
+
+        let posX = window.innerWidth / 2;
+        let posY = window.innerHeight / 2;
+
+        function manejarOrientacion(event) {
+            // Gamma es izquierda/derecha (-90 a 90)
+            // Beta es adelante/atrás (-180 a 180)
+            let x = event.gamma; 
+            let y = event.beta;
+
+            // Actualizamos el texto para ver los números
+            datosTexto.innerText = `X: ${Math.round(x)} | Y: ${Math.round(y)}`;
+
+            // Limitar el movimiento para que no se salga de la pantalla
+            // Multiplicamos por 2 para que el movimiento sea más sensible
+            let moveX = x * 2;
+            let moveY = (y - 45) * 2; // Restamos 45 para que sea cómodo al sostener el móvil inclinado
+
+            personaje.style.transform = `translate(${moveX}px, ${moveY}px)`;
+        }
+
+        // Función para solicitar permiso (especialmente para iPhone)
+        function solicitarPermiso() {
+            if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+                DeviceOrientationEvent.requestPermission()
+                    .then(permissionState => {
+                        if (permissionState === 'granted') {
+                            window.addEventListener('deviceorientation', manejarOrientacion);
+                            boton.style.display = 'none';
+                        }
+                    })
+                    .catch(console.error);
+            } else {
+                // Para Android o navegadores que no necesitan permiso explícito
+                window.addEventListener('deviceorientation', manejarOrientacion);
+                boton.style.display = 'none';
+            }
+        }
+
+        boton.addEventListener('click', solicitarPermiso);
+    </script>
+</body>
+</html>
