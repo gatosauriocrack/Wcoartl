@@ -6,95 +6,96 @@
     <style>
         body {
             margin: 0;
-            background-color: #000;
-            color: #fff;
+            background-color: #050505;
+            color: white;
             font-family: sans-serif;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             height: 100vh;
-            overflow: hidden;
-        }
-        #barra-contenedor {
-            width: 80%;
-            height: 40px;
-            background: #1a1a1a;
-            border-radius: 20px;
-            border: 2px solid #333;
-            overflow: hidden;
-            margin-bottom: 20px;
-        }
-        #relleno {
-            width: 50%;
-            height: 100%;
-            background: linear-gradient(90deg, #3498db, #2ecc71);
-            transition: width 0.1s ease-out;
         }
         #porcentaje {
-            font-size: 80px;
+            font-size: 120px;
             font-weight: bold;
+            text-shadow: 0 0 20px rgba(52, 152, 219, 0.5);
         }
-        #instrucciones {
-            color: #666;
+        #barra-bg {
+            width: 80%;
+            height: 10px;
+            background: #222;
+            border-radius: 5px;
             margin-top: 20px;
-            text-align: center;
+            overflow: hidden;
         }
-        button {
-            padding: 15px 30px;
-            font-size: 18px;
+        #barra-fill {
+            width: 0%;
+            height: 100%;
+            background: #3498db;
+            transition: width 0.1s;
+        }
+        #btn {
+            padding: 20px 40px;
+            font-size: 20px;
             cursor: pointer;
-            border-radius: 10px;
+            background: #3498db;
+            color: white;
             border: none;
-            background: #fff;
+            border-radius: 10px;
+        }
+        #status {
+            margin-top: 20px;
+            color: #555;
+            font-size: 0.9rem;
         }
     </style>
 </head>
 <body>
 
-    <button id="btn">ACTIVAR DETECTOR</button>
+    <button id="btn">INICIAR PRUEBA DE HARDWARE</button>
 
-    <div id="test-area" style="display:none; width: 100%; text-align: center;">
+    <div id="ui" style="display:none; width: 100%; text-align: center;">
         <div id="porcentaje">0%</div>
         <div style="display: flex; justify-content: center;">
-            <div id="barra-contenedor">
-                <div id="relleno"></div>
-            </div>
+            <div id="barra-bg"><div id="barra-fill"></div></div>
         </div>
-        <div id="instrucciones">Presiona los botones de volumen de tu teléfono</div>
+        <div id="status">Presiona los botones de volumen laterales.</div>
     </div>
-
-    <audio id="dummy-audio" loop>
-        <source src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAgD5AAAB+AAABAAgAZGF0YQAAAAA=" type="audio/wav">
-    </audio>
 
     <script>
         const btn = document.getElementById('btn');
-        const testArea = document.getElementById('test-area');
-        const relleno = document.getElementById('relleno');
-        const porcentajeTxt = document.getElementById('porcentaje');
-        const audio = document.getElementById('dummy-audio');
+        const ui = document.getElementById('ui');
+        const fill = document.getElementById('barra-fill');
+        const txt = document.getElementById('porcentaje');
 
-        function actualizar() {
-            let vol = Math.round(audio.volume * 100);
-            porcentajeTxt.innerText = vol + "%";
-            relleno.style.width = vol + "%";
-            
-            document.body.style.backgroundColor = `rgb(0, ${vol/4}, ${vol/2})`;
+        const audioTag = document.createElement('audio');
+        audioTag.loop = true;
+
+        function cargarAudioSeguro() {
+            const wavHeader = new Uint8Array([
+                82, 73, 70, 70, 36, 0, 0, 0, 87, 65, 86, 69, 102, 109, 116, 32, 16, 0, 0, 0, 1, 0, 1, 0, 68, 172, 0, 0, 136, 88, 1, 0, 1, 0, 8, 0, 100, 97, 116, 97, 0, 0, 0, 0
+            ]);
+            const blob = new Blob([wavHeader], { type: 'audio/wav' });
+            audioTag.src = URL.createObjectURL(blob);
         }
 
-        btn.addEventListener('click', () => {
-            btn.style.display = 'none';
-            testArea.style.display = 'block';
-            
-            audio.play();
-            
-            window.setInterval(() => {
-                actualizar();
-            }, 100);
-        });
+        audioTag.onvolumechange = () => {
+            let v = Math.round(audioTag.volume * 100);
+            txt.innerText = v + "%";
+            fill.style.width = v + "%";
+            document.body.style.backgroundColor = `rgb(0, 0, ${Math.min(v, 50)})`;
+        };
 
-        window.addEventListener('volumechange', actualizar);
+        btn.addEventListener('click', () => {
+            cargarAudioSeguro();
+            btn.style.display = 'none';
+            ui.style.display = 'block';
+            
+            audioTag.play().catch(() => {
+                const manualContext = new (window.AudioContext || window.webkitAudioContext)();
+                manualContext.resume();
+            });
+        });
     </script>
 </body>
 </html>
