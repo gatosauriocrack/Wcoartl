@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Giroscopio Test</title>
+    <title>Giroscopio Test - Debug</title>
     <style>
         body {
             margin: 0;
@@ -24,6 +24,11 @@
             border-radius: 50%;
             position: absolute;
             box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            /* Centramos la bola inicialmente */
+            top: 50%;
+            left: 50%;
+            margin-top: -30px;
+            margin-left: -30px;
             will-change: transform;
         }
         #interfaz {
@@ -31,20 +36,22 @@
             z-index: 10;
         }
         button {
-            padding: 15px 30px;
-            font-size: 18px;
+            padding: 15px 40px;
+            font-size: 20px;
             background-color: #2ecc71;
             border: none;
             color: white;
-            border-radius: 8px;
+            border-radius: 50px;
+            box-shadow: 0 4px 15px rgba(46, 204, 113, 0.4);
         }
     </style>
 </head>
 <body>
 
     <div id="interfaz">
-        <p id="datos">Sensores inactivos</p>
-        <button id="botonActivar">Empezar Juego</button>
+        <h2 id="estado">Inactivo</h2>
+        <p id="datos">Presiona el botón para conectar sensores</p>
+        <button id="botonActivar">ACTIVAR</button>
     </div>
 
     <div id="personaje"></div>
@@ -52,9 +59,19 @@
     <script>
         const personaje = document.getElementById('personaje');
         const datosTexto = document.getElementById('datos');
+        const estadoTexto = document.getElementById('estado');
         const boton = document.getElementById('botonActivar');
 
+        let activo = false;
+
         function manejarOrientacion(event) {
+            // Si entra aquí, los sensores están enviando datos
+            if (!activo) {
+                activo = true;
+                estadoTexto.innerText = "¡CONECTADO!";
+                estadoTexto.style.color = "#2ecc71";
+            }
+
             let x = event.gamma; 
             let y = event.beta;  
 
@@ -62,26 +79,42 @@
 
             datosTexto.innerText = `X: ${Math.round(x)} | Y: ${Math.round(y)}`;
 
-            let multiplicador = 2.5;
-            let moveX = x * multiplicador;
-            let moveY = (y - 45) * multiplicador;
+            // Sensibilidad
+            let moveX = x * 2.5;
+            let moveY = (y - 45) * 2.5;
 
-            let limiteX = (window.innerWidth / 2) - 35;
-            let limiteY = (window.innerHeight / 2) - 35;
+            // Limites de pantalla
+            let limX = (window.innerWidth / 2) - 40;
+            let limY = (window.innerHeight / 2) - 40;
 
-            moveX = Math.max(-limiteX, Math.min(limiteX, moveX));
-            moveY = Math.max(-limiteY, Math.min(limiteY, moveY));
+            moveX = Math.max(-limX, Math.min(limX, moveX));
+            moveY = Math.max(-limY, Math.min(limY, moveY));
 
             personaje.style.transform = `translate(${moveX}px, ${moveY}px)`;
         }
 
         boton.addEventListener('click', () => {
-            if (typeof DeviceOrientationEvent !== 'undefined') {
+            estadoTexto.innerText = "Buscando sensores...";
+            
+            if (window.DeviceOrientationEvent) {
+                // Escuchar el evento
                 window.addEventListener('deviceorientation', manejarOrientacion, true);
+                
+                // Ocultar botón después de click
                 boton.style.display = 'none';
-                datosTexto.innerText = "¡Mueve el teléfono!";
+
+                // Verificación de seguridad por si el navegador bloquea los datos
+                setTimeout(() => {
+                    if (!activo) {
+                        alert("El navegador no entrega datos. \n\n1. Ve a Configuración de Chrome \n2. Configuración de sitios \n3. Sensores de movimiento \n4. Dale a 'Permitir'.");
+                        estadoTexto.innerText = "ERROR DE PERMISO";
+                        estadoTexto.style.color = "#e74c3c";
+                    }
+                }, 2000);
+
             } else {
-                datosTexto.innerText = "Error: Sensor no compatible";
+                alert("Tu dispositivo o navegador no soporta giroscopio.");
+                estadoTexto.innerText = "NO COMPATIBLE";
             }
         });
     </script>
