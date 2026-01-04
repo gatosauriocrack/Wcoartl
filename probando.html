@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Giroscopio Test - Debug</title>
+    <title>Juego Giroscopio Fijo</title>
     <style>
         body {
             margin: 0;
@@ -18,22 +18,21 @@
             touch-action: none;
         }
         #personaje {
-            width: 60px;
-            height: 60px;
+            width: 50px;
+            height: 50px;
             background: radial-gradient(circle at 30% 30%, #ff5733, #900);
             border-radius: 50%;
             position: absolute;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
-            /* Centramos la bola inicialmente */
-            top: 50%;
+            /* Posición inicial central */
             left: 50%;
-            margin-top: -30px;
-            margin-left: -30px;
-            will-change: transform;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
         }
         #interfaz {
             text-align: center;
             z-index: 10;
+            pointer-events: none;
         }
         button {
             padding: 15px 40px;
@@ -42,16 +41,15 @@
             border: none;
             color: white;
             border-radius: 50px;
-            box-shadow: 0 4px 15px rgba(46, 204, 113, 0.4);
+            pointer-events: auto;
         }
     </style>
 </head>
 <body>
 
     <div id="interfaz">
-        <h2 id="estado">Inactivo</h2>
-        <p id="datos">Presiona el botón para conectar sensores</p>
-        <button id="botonActivar">ACTIVAR</button>
+        <p id="datos">X: 0 | Y: 0</p>
+        <button id="botonActivar">EMPEZAR</button>
     </div>
 
     <div id="personaje"></div>
@@ -59,63 +57,49 @@
     <script>
         const personaje = document.getElementById('personaje');
         const datosTexto = document.getElementById('datos');
-        const estadoTexto = document.getElementById('estado');
         const boton = document.getElementById('botonActivar');
 
-        let activo = false;
+        // Variables de posición
+        let centerX = window.innerWidth / 2;
+        let centerY = window.innerHeight / 2;
 
         function manejarOrientacion(event) {
-            // Si entra aquí, los sensores están enviando datos
-            if (!activo) {
-                activo = true;
-                estadoTexto.innerText = "¡CONECTADO!";
-                estadoTexto.style.color = "#2ecc71";
-            }
-
-            let x = event.gamma; 
-            let y = event.beta;  
+            let x = event.gamma; // Izquierda/Derecha (-90 a 90)
+            let y = event.beta;  // Adelante/Atrás (-180 a 180)
 
             if (x === null || y === null) return;
 
             datosTexto.innerText = `X: ${Math.round(x)} | Y: ${Math.round(y)}`;
 
-            // Sensibilidad
-            let moveX = x * 2.5;
-            let moveY = (y - 45) * 2.5;
+            // Sensibilidad: cuánto se mueve la bola por cada grado de inclinación
+            let sensibilidad = 3;
 
-            // Limites de pantalla
-            let limX = (window.innerWidth / 2) - 40;
-            let limY = (window.innerHeight / 2) - 40;
+            // Calculamos la nueva posición desde el centro
+            let nuevaX = centerX + (x * sensibilidad);
+            let nuevaY = centerY + ((y - 45) * sensibilidad);
 
-            moveX = Math.max(-limX, Math.min(limX, moveX));
-            moveY = Math.max(-limY, Math.min(limY, moveY));
+            // Ajuste de límites para que no desaparezca
+            nuevaX = Math.max(25, Math.min(window.innerWidth - 25, nuevaX));
+            nuevaY = Math.max(25, Math.min(window.innerHeight - 25, nuevaY));
 
-            personaje.style.transform = `translate(${moveX}px, ${moveY}px)`;
+            // Aplicamos la posición directamente al estilo
+            personaje.style.left = nuevaX + "px";
+            personaje.style.top = nuevaY + "px";
         }
 
         boton.addEventListener('click', () => {
-            estadoTexto.innerText = "Buscando sensores...";
-            
             if (window.DeviceOrientationEvent) {
-                // Escuchar el evento
                 window.addEventListener('deviceorientation', manejarOrientacion, true);
-                
-                // Ocultar botón después de click
                 boton.style.display = 'none';
-
-                // Verificación de seguridad por si el navegador bloquea los datos
-                setTimeout(() => {
-                    if (!activo) {
-                        alert("El navegador no entrega datos. \n\n1. Ve a Configuración de Chrome \n2. Configuración de sitios \n3. Sensores de movimiento \n4. Dale a 'Permitir'.");
-                        estadoTexto.innerText = "ERROR DE PERMISO";
-                        estadoTexto.style.color = "#e74c3c";
-                    }
-                }, 2000);
-
             } else {
-                alert("Tu dispositivo o navegador no soporta giroscopio.");
-                estadoTexto.innerText = "NO COMPATIBLE";
+                alert("Tu navegador no soporta giroscopio.");
             }
+        });
+
+        // Recalcular centro si se gira la pantalla
+        window.addEventListener('resize', () => {
+            centerX = window.innerWidth / 2;
+            centerY = window.innerHeight / 2;
         });
     </script>
 </body>
