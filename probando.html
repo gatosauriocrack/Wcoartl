@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Juego Giroscopio Fijo</title>
+    <title>Juego Giroscopio - Permisos</title>
     <style>
         body {
             margin: 0;
@@ -23,33 +23,34 @@
             background: radial-gradient(circle at 30% 30%, #ff5733, #900);
             border-radius: 50%;
             position: absolute;
-            /* Posición inicial central */
             left: 50%;
             top: 50%;
             transform: translate(-50%, -50%);
             box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            z-index: 5;
         }
         #interfaz {
             text-align: center;
             z-index: 10;
-            pointer-events: none;
         }
         button {
-            padding: 15px 40px;
+            padding: 20px 40px;
             font-size: 20px;
             background-color: #2ecc71;
             border: none;
             color: white;
             border-radius: 50px;
-            pointer-events: auto;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
     </style>
 </head>
 <body>
 
     <div id="interfaz">
-        <p id="datos">X: 0 | Y: 0</p>
-        <button id="botonActivar">EMPEZAR</button>
+        <h1 id="titulo">Control de Sensores</h1>
+        <p id="datos">Los sensores están bloqueados</p>
+        <button id="botonPermiso">DAR PERMISO Y EMPEZAR</button>
     </div>
 
     <div id="personaje"></div>
@@ -57,46 +58,68 @@
     <script>
         const personaje = document.getElementById('personaje');
         const datosTexto = document.getElementById('datos');
-        const boton = document.getElementById('botonActivar');
+        const boton = document.getElementById('botonPermiso');
+        const titulo = document.getElementById('titulo');
 
-        // Variables de posición
         let centerX = window.innerWidth / 2;
         let centerY = window.innerHeight / 2;
 
         function manejarOrientacion(event) {
-            let x = event.gamma; // Izquierda/Derecha (-90 a 90)
-            let y = event.beta;  // Adelante/Atrás (-180 a 180)
+            let x = event.gamma; 
+            let y = event.beta;  
 
-            if (x === null || y === null) return;
+            // Si los datos llegan como null, el sensor existe pero no envía info
+            if (x === null || y === null) {
+                datosTexto.innerText = "Sensor detectado pero no envía datos...";
+                return;
+            }
 
             datosTexto.innerText = `X: ${Math.round(x)} | Y: ${Math.round(y)}`;
 
-            // Sensibilidad: cuánto se mueve la bola por cada grado de inclinación
-            let sensibilidad = 3;
-
-            // Calculamos la nueva posición desde el centro
+            let sensibilidad = 3.5;
             let nuevaX = centerX + (x * sensibilidad);
             let nuevaY = centerY + ((y - 45) * sensibilidad);
 
-            // Ajuste de límites para que no desaparezca
+            // Colisión con bordes de pantalla
             nuevaX = Math.max(25, Math.min(window.innerWidth - 25, nuevaX));
             nuevaY = Math.max(25, Math.min(window.innerHeight - 25, nuevaY));
 
-            // Aplicamos la posición directamente al estilo
             personaje.style.left = nuevaX + "px";
             personaje.style.top = nuevaY + "px";
         }
 
-        boton.addEventListener('click', () => {
-            if (window.DeviceOrientationEvent) {
-                window.addEventListener('deviceorientation', manejarOrientacion, true);
-                boton.style.display = 'none';
+        async function activarSensores() {
+            // 1. Verificar si es iOS y necesita permiso explícito
+            if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+                try {
+                    const permiso = await DeviceOrientationEvent.requestPermission();
+                    if (permiso === 'granted') {
+                        iniciarEvento();
+                    } else {
+                        alert("Permiso denegado por el usuario");
+                    }
+                } catch (error) {
+                    alert("Error al solicitar permiso: " + error);
+                }
             } else {
-                alert("Tu navegador no soporta giroscopio.");
+                // 2. Para Android y otros navegadores
+                if (window.DeviceOrientationEvent) {
+                    iniciarEvento();
+                } else {
+                    alert("Tu dispositivo no soporta orientación.");
+                }
             }
-        });
+        }
 
-        // Recalcular centro si se gira la pantalla
+        function iniciarEvento() {
+            window.addEventListener('deviceorientation', manejarOrientacion, true);
+            boton.style.display = 'none';
+            titulo.innerText = "¡Mueve el móvil!";
+            datosTexto.innerText = "Buscando señal...";
+        }
+
+        boton.addEventListener('click', activarSensores);
+
         window.addEventListener('resize', () => {
             centerX = window.innerWidth / 2;
             centerY = window.innerHeight / 2;
