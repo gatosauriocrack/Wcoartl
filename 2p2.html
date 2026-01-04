@@ -6,77 +6,42 @@
     <title>Misión Cubos P2P</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="https://unpkg.com/html5-qrcode@2.3.8/minified/html5-qrcode.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode/html5-qrcode.min.js"></script>
     <style>
-        body { font-family: 'Press Start 2P', cursive; text-align: center; background: #2c3e50; color: #ecf0f1; padding: 20px; overflow: hidden; user-select: none; }
-        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap'); /* Fuente retro */
-
-        .btn { background: #3498db; border: none; color: white; padding: 15px 30px; border-radius: 8px; font-size: 16px; margin: 10px; cursor: pointer; transition: background 0.3s ease; }
-        .btn:hover { background: #2980b9; }
+        body { font-family: Arial, sans-serif; text-align: center; background: #2c3e50; color: #ecf0f1; padding: 20px; overflow: hidden; user-select: none; }
+        .btn { background: #3498db; border: none; color: white; padding: 15px 30px; border-radius: 8px; font-size: 16px; margin: 10px; cursor: pointer; }
         #qrcode { background: white; padding: 10px; display: inline-block; margin-top: 20px; border-radius: 5px; }
         .hidden { display: none; }
-        #status { color: #2ecc71; margin: 15px; font-weight: bold; font-size: 1.1em; }
-
-        /* Estilos del juego */
-        #game-container {
-            width: 100%;
-            max-width: 600px;
-            height: 300px;
-            background: #34495e;
-            margin: 20px auto;
-            border: 4px solid #f1c40f;
-            position: relative;
-            overflow: hidden;
-            border-radius: 10px;
-        }
-        .player-cube {
-            width: 30px;
-            height: 30px;
-            position: absolute;
-            bottom: 0px; /* Base del suelo */
-            left: 50px;
-            background: #e74c3c;
-            border: 2px solid #c0392b;
-            box-sizing: border-box;
-            transition: left 0.1s linear; /* Movimiento horizontal suave */
-        }
-        #player1 { background: #e74c3c; left: 50px; } /* Rojo */
-        #player2 { background: #2ecc71; left: 100px; } /* Verde */
-
-        /* Controles */
-        #controls { margin-top: 20px; }
-        .game-btn { background: #f39c12; border: none; color: white; padding: 15px 25px; border-radius: 50%; font-size: 20px; margin: 5px; cursor: pointer; }
-        .game-btn.left { float: left; margin-left: 10%; }
-        .game-btn.right { float: right; margin-right: 10%; }
-        .game-btn.jump { display: block; margin: 0 auto; clear: both; }
-
-        /* Lector QR */
+        #status { color: #2ecc71; margin: 15px; font-weight: bold; }
+        #game-container { width: 100%; max-width: 600px; height: 300px; background: #34495e; margin: 20px auto; border: 4px solid #f1c40f; position: relative; overflow: hidden; border-radius: 10px; }
+        .player-cube { width: 30px; height: 30px; position: absolute; bottom: 0px; box-sizing: border-box; }
+        #player1 { background: #e74c3c; border: 2px solid #c0392b; left: 50px; }
+        #player2 { background: #2ecc71; border: 2px solid #27ae60; left: 100px; }
+        #controls { margin-top: 20px; display: flex; justify-content: center; gap: 10px; align-items: center; }
+        .game-btn { background: #f39c12; border: none; color: white; padding: 20px; border-radius: 50%; font-size: 18px; cursor: pointer; width: 70px; height: 70px; }
         #reader { width: 100%; max-width: 400px; margin: 20px auto; }
-        #reader video { width: 100% !important; height: auto !important; border: 2px solid #f1c40f; border-radius: 5px; }
-        #reader__dashboard_section_csr button { background: #e74c3c; border: none; color: white; padding: 10px 15px; border-radius: 5px; cursor: pointer; }
+        #reader video { width: 100% !important; border-radius: 5px; }
     </style>
 </head>
 <body>
 
     <h1>Misión Cubos P2P</h1>
-    <div id="status">Esperando acción...</div>
+    <div id="status">Esperando conexión...</div>
 
     <div id="menu">
-        <button class="btn" onclick="iniciarAnfitrion()">Crear Misión (Anfitrión)</button>
-        <button class="btn" onclick="iniciarInvitado()">Unirse a Misión (Invitado)</button>
+        <button class="btn" onclick="iniciarAnfitrion()">Crear Misión</button>
+        <button class="btn" onclick="iniciarInvitado()">Unirse a Misión</button>
     </div>
 
     <div id="section-anfitrion" class="hidden">
-        <p>Tu amigo debe escanear este QR:</p>
+        <p>Escanea este código:</p>
         <div id="qrcode"></div>
-        <p>ID Manual: <span id="my-id">...</span></p>
+        <p>ID: <span id="my-id">...</span></p>
     </div>
 
     <div id="section-invitado" class="hidden">
-        <p>Escanea el QR de tu amigo:</p>
         <div id="reader"></div>
-        <p>O ingresa el ID:</p>
-        <input type="text" id="join-id" placeholder="ID del anfitrión" style="padding: 10px; width: 80%; max-width: 300px; border-radius: 5px; border: 1px solid #34495e; background: #ecf0f1; color: #2c3e50;">
+        <input type="text" id="join-id" placeholder="ID manual" style="padding: 10px; margin-top:10px;">
         <button class="btn" onclick="conectarAAmigoManual()">Conectar</button>
     </div>
 
@@ -86,218 +51,100 @@
             <div id="player2" class="player-cube"></div>
         </div>
         <div id="controls">
-            <button class="game-btn left" ontouchstart="movePlayer(-10)" ontouchend="stopMove()">&lt;</button>
-            <button class="game-btn jump" ontouchstart="jumpPlayer()">SALTO</button>
-            <button class="game-btn right" ontouchstart="movePlayer(10)" ontouchend="stopMove()">&gt;</button>
+            <button class="game-btn" ontouchstart="movePlayer(-10)" ontouchend="stopMove()">←</button>
+            <button class="game-btn" ontouchstart="jumpPlayer()">↑</button>
+            <button class="game-btn" ontouchstart="movePlayer(10)" ontouchend="stopMove()">→</button>
         </div>
     </div>
 
     <script>
-        let peer;
-        let conn;
-        let isAnfitrion = false;
-
-        // --- LÓGICA DEL JUEGO ---
-        const gameContainer = document.getElementById('game-container');
-        const player1 = document.getElementById('player1');
-        const player2 = document.getElementById('player2');
-        const playerSpeed = 5; // Velocidad de movimiento
-        const jumpHeight = 80;
-        const gravity = 5; // Simula la gravedad
-
-        let player1Y = 0; // Posición Y relativa al suelo
-        let player2Y = 0;
-        let player1VelY = 0; // Velocidad de salto
-        let player2VelY = 0;
-        
-        let player1X = 50; // Posición X inicial
-        let player2X = gameContainer.offsetWidth - 80; // Posición X inicial del otro jugador
-
-        let isJumping1 = false;
-        let isJumping2 = false;
-        let movingInterval = null;
-
-        let myPlayerElement; // Referencia a mi cubo
-        let otherPlayerElement; // Referencia al cubo del otro
-        let myPlayerX;
-        let myPlayerY;
-        let myPlayerVelY;
-        let isMyPlayerJumping;
-
+        let peer, conn, isAnfitrion = false;
+        let myX, myY = 0, myVelY = 0, jumping = false;
+        let otherX, otherY = 0;
+        let moveInt = null;
 
         function initGame() {
-            // Inicializar mi propio jugador y el del otro
-            if (isAnfitrion) {
-                myPlayerElement = player1;
-                otherPlayerElement = player2;
-                myPlayerX = player1X;
-                myPlayerY = player1Y;
-                myPlayerVelY = player1VelY;
-                isMyPlayerJumping = isJumping1;
-            } else {
-                myPlayerElement = player2;
-                otherPlayerElement = player1;
-                myPlayerX = player2X;
-                myPlayerY = player2Y;
-                myPlayerVelY = player2VelY;
-                isMyPlayerJumping = isJumping2;
-            }
-            // Sincronizar posición inicial (Anfitrión setea la posición del segundo jugador)
-            otherPlayerElement.style.left = isAnfitrion ? player2X + 'px' : player1X + 'px';
-
-            gameLoop(); // Iniciar el bucle de juego
+            document.getElementById('game-play').classList.remove('hidden');
+            myX = isAnfitrion ? 50 : 250;
+            loop();
         }
 
-        function gameLoop() {
-            // Aplicar gravedad a mi jugador
-            if (myPlayerY > 0 || myPlayerVelY > 0) { // Si no estoy en el suelo o subiendo
-                myPlayerY += myPlayerVelY;
-                myPlayerVelY -= gravity; // La gravedad tira hacia abajo
-                if (myPlayerY < 0) { // Si toca el suelo
-                    myPlayerY = 0;
-                    myPlayerVelY = 0;
-                    isMyPlayerJumping = false;
-                }
+        function loop() {
+            if (myY > 0 || myVelY > 0) {
+                myVelY -= 1.5;
+                myY += myVelY;
+                if (myY <= 0) { myY = 0; myVelY = 0; jumping = false; }
             }
-            myPlayerElement.style.bottom = myPlayerY + 'px';
-            myPlayerElement.style.left = myPlayerX + 'px';
+            const me = isAnfitrion ? player1 : player2;
+            const him = isAnfitrion ? player2 : player1;
+            
+            me.style.bottom = myY + 'px';
+            me.style.left = myX + 'px';
+            him.style.left = otherX + 'px';
+            him.style.bottom = otherY + 'px';
 
-            // Enviar mi estado actual al otro jugador
             if (conn && conn.open) {
-                conn.send({ 
-                    type: "GAME_STATE", 
-                    x: myPlayerX, 
-                    y: myPlayerY, 
-                    isJumping: isMyPlayerJumping 
-                });
+                conn.send({ x: myX, y: myY });
             }
-
-            requestAnimationFrame(gameLoop);
+            requestAnimationFrame(loop);
         }
 
-        function movePlayer(direction) {
-            if (movingInterval) clearInterval(movingInterval);
-            movingInterval = setInterval(() => {
-                myPlayerX += direction;
-                // Limitar movimiento dentro del contenedor
-                if (myPlayerX < 0) myPlayerX = 0;
-                if (myPlayerX > gameContainer.offsetWidth - myPlayerElement.offsetWidth) {
-                    myPlayerX = gameContainer.offsetWidth - myPlayerElement.offsetWidth;
-                }
-            }, 30); // Actualiza cada 30ms para un movimiento suave
+        function movePlayer(d) {
+            if (moveInt) clearInterval(moveInt);
+            moveInt = setInterval(() => {
+                myX += d;
+                if (myX < 0) myX = 0;
+                if (myX > 570) myX = 570;
+            }, 20);
         }
 
-        function stopMove() {
-            clearInterval(movingInterval);
-            movingInterval = null;
-        }
+        function stopMove() { clearInterval(moveInt); }
 
         function jumpPlayer() {
-            if (!isMyPlayerJumping) {
-                isMyPlayerJumping = true;
-                myPlayerVelY = jumpHeight;
-            }
+            if (!jumping) { jumping = true; myVelY = 25; }
         }
 
-        // --- LÓGICA ANFITRIÓN ---
+        function setupConn() {
+            conn.on('open', () => {
+                document.getElementById('status').innerText = "¡CONECTADOS!";
+                document.getElementById('menu').classList.add('hidden');
+                document.getElementById('section-anfitrion').classList.add('hidden');
+                document.getElementById('section-invitado').classList.add('hidden');
+                initGame();
+            });
+            conn.on('data', d => { otherX = d.x; otherY = d.y; });
+        }
+
         function iniciarAnfitrion() {
             isAnfitrion = true;
-            document.getElementById('menu').classList.add('hidden');
-            document.getElementById('section-anfitrion').classList.remove('hidden');
-            
-            peer = new Peer(); // Crea un ID aleatorio en los servidores de PeerJS
-
-            peer.on('open', (id) => {
+            peer = new Peer();
+            peer.on('open', id => {
                 document.getElementById('my-id').innerText = id;
-                document.getElementById('status').innerText = "Sala creada. Esperando amigo...";
                 new QRCode(document.getElementById("qrcode"), id);
+                document.getElementById('menu').classList.add('hidden');
+                document.getElementById('section-anfitrion').classList.remove('hidden');
             });
-
-            peer.on('connection', (c) => {
-                conn = c;
-                configurarConexion();
-            });
+            peer.on('connection', c => { conn = c; setupConn(); });
         }
 
-        // --- LÓGICA INVITADO ---
-        let html5QrCode;
         function iniciarInvitado() {
-            isAnfitrion = false;
             document.getElementById('menu').classList.add('hidden');
             document.getElementById('section-invitado').classList.remove('hidden');
-            document.getElementById('status').innerText = "Escaneando QR o ingresando ID...";
-
             peer = new Peer();
-
-            // Iniciar lector QR
-            html5QrCode = new Html5Qrcode("reader");
-            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-            html5QrCode.start({ facingMode: "environment" }, config, 
-                (decodedText, decodedResult) => {
-                    // QR leido con éxito, intentar conectar
-                    html5QrCode.stop().then(() => {
-                        document.getElementById('status').innerText = "QR leído. Conectando...";
-                        conectarAAmigo(decodedText);
-                    }).catch(err => {
-                        console.error("Error al detener el lector QR:", err);
-                    });
-                },
-                (errorMessage) => {
-                    // console.warn(`Error al leer QR: ${errorMessage}`); // Desactivado para no llenar la consola
-                })
-            .catch((err) => {
-                console.error("No se pudo iniciar el lector QR:", err);
-                document.getElementById('status').innerText = "Error: No se pudo iniciar la cámara para el QR. Intenta unirte con el ID manual.";
-            });
+            
+            if (typeof Html5Qrcode !== 'undefined') {
+                const scanner = new Html5Qrcode("reader");
+                scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, id => {
+                    scanner.stop();
+                    conn = peer.connect(id);
+                    setupConn();
+                }).catch(e => console.error(e));
+            }
         }
 
         function conectarAAmigoManual() {
-            const idDestino = document.getElementById('join-id').value;
-            if (idDestino) {
-                document.getElementById('status').innerText = "Conectando al ID: " + idDestino;
-                conectarAAmigo(idDestino);
-            } else {
-                document.getElementById('status').innerText = "Por favor, ingresa un ID válido.";
-            }
-        }
-
-        function conectarAAmigo(idDestino) {
-            conn = peer.connect(idDestino);
-            configurarConexion();
-        }
-
-        // --- LÓGICA DE CONEXIÓN COMPARTIDA ---
-        function configurarConexion() {
-            conn.on('open', () => {
-                document.getElementById('status').innerText = "¡CONECTADOS! Iniciando misión de cubos...";
-                document.getElementById('section-anfitrion').classList.add('hidden');
-                document.getElementById('section-invitado').classList.add('hidden');
-                document.getElementById('game-play').classList.remove('hidden');
-                
-                initGame(); // Iniciar el bucle del juego una vez conectados
-            });
-
-            // RECIBIR DATOS DEL OTRO JUGADOR
-            conn.on('data', (data) => {
-                if(data.type === "GAME_STATE") {
-                    // Actualizar la posición del otro jugador
-                    otherPlayerElement.style.left = data.x + 'px';
-                    otherPlayerElement.style.bottom = data.y + 'px';
-                    // Aquí podrías agregar lógica para saltos del otro jugador si fuera necesario,
-                    // pero para un cubo simple solo con X e Y es suficiente
-                }
-            });
-
-            conn.on('close', () => {
-                document.getElementById('status').innerText = "¡Conexión perdida!";
-                document.getElementById('game-play').classList.add('hidden');
-                document.getElementById('menu').classList.remove('hidden');
-            });
-
-            conn.on('error', (err) => {
-                document.getElementById('status').innerText = "Error de conexión: " + err;
-                console.error("Error de PeerJS:", err);
-            });
+            conn = peer.connect(document.getElementById('join-id').value);
+            setupConn();
         }
     </script>
 </body>
