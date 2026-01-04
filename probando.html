@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Juego Giroscopio - Permisos</title>
+    <title>Juego por Acelerómetro</title>
     <style>
         body {
             margin: 0;
@@ -27,102 +27,58 @@
             top: 50%;
             transform: translate(-50%, -50%);
             box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-            z-index: 5;
         }
-        #interfaz {
-            text-align: center;
-            z-index: 10;
-        }
-        button {
-            padding: 20px 40px;
-            font-size: 20px;
-            background-color: #2ecc71;
-            border: none;
-            color: white;
-            border-radius: 50px;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        }
+        #datos { position: absolute; top: 10px; width: 100%; text-align: center; }
+        button { padding: 20px 40px; font-size: 20px; background-color: #2ecc71; border: none; color: white; border-radius: 50px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <div id="interfaz">
-        <h1 id="titulo">Control de Sensores</h1>
-        <p id="datos">Los sensores están bloqueados</p>
-        <button id="botonPermiso">DAR PERMISO Y EMPEZAR</button>
+    <div id="datos">
+        <p id="texto">Esperando Acelerómetro...</p>
+        <button id="botonBtn">EMPEZAR</button>
     </div>
 
     <div id="personaje"></div>
 
     <script>
         const personaje = document.getElementById('personaje');
-        const datosTexto = document.getElementById('datos');
-        const boton = document.getElementById('botonPermiso');
-        const titulo = document.getElementById('titulo');
+        const texto = document.getElementById('texto');
+        const boton = document.getElementById('botonBtn');
 
-        let centerX = window.innerWidth / 2;
-        let centerY = window.innerHeight / 2;
+        let posX = window.innerWidth / 2;
+        let posY = window.innerHeight / 2;
 
-        function manejarOrientacion(event) {
-            let x = event.gamma; 
-            let y = event.beta;  
+        function moverConAcelerometro(event) {
+            // Usamos la aceleración con gravedad (lo que vimos que funciona en tu foto)
+            let accX = event.accelerationIncludingGravity.x;
+            let accY = event.accelerationIncludingGravity.y;
 
-            // Si los datos llegan como null, el sensor existe pero no envía info
-            if (x === null || y === null) {
-                datosTexto.innerText = "Sensor detectado pero no envía datos...";
-                return;
-            }
+            if (accX === null || accY === null) return;
 
-            datosTexto.innerText = `X: ${Math.round(x)} | Y: ${Math.round(y)}`;
+            texto.innerText = `X: ${accX.toFixed(2)} | Y: ${accY.toFixed(2)}`;
 
-            let sensibilidad = 3.5;
-            let nuevaX = centerX + (x * sensibilidad);
-            let nuevaY = centerY + ((y - 45) * sensibilidad);
+            // En Android, el eje X está invertido respecto a la pantalla
+            // Ajustamos la sensibilidad (el 5) a tu gusto
+            posX -= accX * 5; 
+            posY += accY * 5;
 
-            // Colisión con bordes de pantalla
-            nuevaX = Math.max(25, Math.min(window.innerWidth - 25, nuevaX));
-            nuevaY = Math.max(25, Math.min(window.innerHeight - 25, nuevaY));
+            // Límites de pantalla
+            posX = Math.max(25, Math.min(window.innerWidth - 25, posX));
+            posY = Math.max(25, Math.min(window.innerHeight - 25, posY));
 
-            personaje.style.left = nuevaX + "px";
-            personaje.style.top = nuevaY + "px";
+            personaje.style.left = posX + "px";
+            personaje.style.top = posY + "px";
         }
 
-        async function activarSensores() {
-            // 1. Verificar si es iOS y necesita permiso explícito
-            if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-                try {
-                    const permiso = await DeviceOrientationEvent.requestPermission();
-                    if (permiso === 'granted') {
-                        iniciarEvento();
-                    } else {
-                        alert("Permiso denegado por el usuario");
-                    }
-                } catch (error) {
-                    alert("Error al solicitar permiso: " + error);
-                }
+        boton.addEventListener('click', () => {
+            if (window.DeviceMotionEvent) {
+                window.addEventListener('devicemotion', moverConAcelerometro, true);
+                boton.style.display = 'none';
+                texto.innerText = "¡Mueve el teléfono!";
             } else {
-                // 2. Para Android y otros navegadores
-                if (window.DeviceOrientationEvent) {
-                    iniciarEvento();
-                } else {
-                    alert("Tu dispositivo no soporta orientación.");
-                }
+                alert("Tu dispositivo no soporta acelerómetro.");
             }
-        }
-
-        function iniciarEvento() {
-            window.addEventListener('deviceorientation', manejarOrientacion, true);
-            boton.style.display = 'none';
-            titulo.innerText = "¡Mueve el móvil!";
-            datosTexto.innerText = "Buscando señal...";
-        }
-
-        boton.addEventListener('click', activarSensores);
-
-        window.addEventListener('resize', () => {
-            centerX = window.innerWidth / 2;
-            centerY = window.innerHeight / 2;
         });
     </script>
 </body>
